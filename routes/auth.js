@@ -19,7 +19,7 @@ router.post('/register', function(req, res){
 			return res.render('register', { info: "Sorry that username already exists." });
 
 		passport.authenticate('local')(req, res, function(){
-			console.log("test");
+			res.redirect('/');
 		});
 	});
 });
@@ -29,7 +29,7 @@ router.get('/login', function(req, res){
 });
 
 router.post('/login', passport.authenticate('local'), function(req, res){
-	res.redirect('/');
+	res.redirect('/auth', { user: req.user });
 });
 
 router.get('/logout', function(req, res){

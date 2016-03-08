@@ -4,12 +4,12 @@
 	<title>Register</title>
 </head>
 <body>
-	<form role="form" action="/register" method="post">
+	<form role="form" action="/auth/register" method="post">
 		Username <input type="text" name="username">
 		Password <input type="password" name="password">
 		<button type="submit">Submit</button>
 	</form>
-	<a href="/">
+	<a href="/auth/login">
 		<button type="button">Cancel</button>
 	</a>
 	<%= info %>
