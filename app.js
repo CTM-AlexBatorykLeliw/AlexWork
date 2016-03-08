@@ -5,16 +5,20 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
-var expressSession = require('express-session');
+var session = require('express-session');
 var mongoose = require('mongoose');
+var LocalStrategy = require('passport-local').Strategy;
 
-// Schema Models and DB connect
-require('./models/User');
+// Passport Auth
+var User = require('./models/User');
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 mongoose.connect('mongodb://localhost/app');
 
 // Routes
 var routes = require('./routes/index');
-var users = require('./routes/users');
+var auth = require('./routes/auth');
 
 var app = express();
 
@@ -29,12 +33,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(expressSession({ secret: 'Alex secret', resave: true, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(session({ secret: 'Alex secret', resave: false, saveUninitialized: true, cookie: { secure: true }}));
 
 app.use('/', routes);
-app.use('/users', users);
+app.use('/auth', auth);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next){
@@ -43,8 +47,7 @@ app.use(function(req, res, next){
     next(err);
 });
 
-// error handlers
-
+// ERR handlers
 // development error handler, will print stacktrace
 if(app.get('env') === 'development')
     app.use(function(err, req, res, next){
