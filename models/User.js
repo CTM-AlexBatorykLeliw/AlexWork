@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var passportLocalMongoose = require('passport-local-mongoose');
 
 var UserSchema = new mongoose.Schema({
-	username: String,
+	email: String,
 	password: String,
 	created_at: Date,
 	updated_at: Date
@@ -18,6 +18,6 @@ UserSchema.pre('save', function(next){
 	next();
 });
 
-UserSchema.plugin(passportLocalMongoose);
+UserSchema.plugin(passportLocalMongoose, { usernameField: 'email'});
 
 module.exports = mongoose.model('User', UserSchema);

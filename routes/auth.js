@@ -5,21 +5,17 @@ var User = mongoose.model('User');
 var router = express.Router();
 
 /* PASSPORT LOCAL AUTH */
-router.get('/', function(req, res){
-	res.render('index', { user: req.user, title: "Index" });
-});
-
 router.get('/register', function(req, res){
 	res.render('register', { info: "Please enter your details" });
 });
 
 router.post('/register', function(req, res){
-	User.register(new User({ username: req.body.username }), req.body.password, function(err, user){
+	User.register(new User({ email: req.body.email }), req.body.password, function(err, user){
 		if(err)
-			return res.render('register', { info: "Sorry that username already exists." });
+			return res.render('register', { info: err });
 
 		passport.authenticate('local')(req, res, function(){
-			res.redirect('/');
+			res.render('home', { user: req.user, title: "Home" });
 		});
 	});
 });
@@ -29,12 +25,16 @@ router.get('/login', function(req, res){
 });
 
 router.post('/login', passport.authenticate('local'), function(req, res){
-	res.redirect('/auth', { user: req.user });
+	res.render('home', { user: req.user, title: 'Home' });
 });
 
 router.get('/logout', function(req, res){
 	req.logout();
-	res.redirect('/');
+	res.redirect('/auth/login');
+});
+
+router.get('/reset', function(req, res){
+	res.render('reset', { authenticated: false });
 });
 
 module.exports = router;

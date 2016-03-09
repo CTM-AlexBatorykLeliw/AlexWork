@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
+</head>
+<body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
     <% if(user){ %>
-    	<p>You are currently logged in as: {{user.username}}</p>
+    	<p>You are currently logged in as: <%= user.email %></p>
+    	<p>You can signout by clicking <a href="/auth/logout">here</a></p>
     <% }else{ %>
     	<p>You are not logged in as a user. Sign in <a href="/auth/login">here</a></p>
     <% } %>
-  </body>
+</body>
 </html>
