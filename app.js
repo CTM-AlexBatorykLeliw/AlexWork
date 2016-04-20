@@ -8,6 +8,7 @@ var passport = require('passport');
 var session = require('express-session');
 var mongoose = require('mongoose');
 var localStrategy = require('passport-local').Strategy;
+var flash = require('connect-flash');
 
 // Mongoose connection
 mongoose.connect('mongodb://localhost/users');
@@ -42,6 +43,7 @@ app.use(passport.session()); // Persistent login sessions
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+app.use(flash());
 
 // Routes
 app.use('/', require('./routes/main'));
