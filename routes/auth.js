@@ -1,40 +1,53 @@
 var express = require('express');
+var app = express.Router();
 var passport = require('passport');
-var mongoose = require('mongoose');
-var User = mongoose.model('User');
-var router = express.Router();
+var User = require('../models/user');
 
-/* PASSPORT LOCAL AUTH */
-router.get('/register', function(req, res){
-	res.render('register', { info: "Please enter your details" });
+/* GET routes */
+app.get('/login', function(req, res){
+	res.render('auth/login', { errMsg: ""});
 });
 
-router.post('/register', function(req, res){
-	User.register(new User({ email: req.body.email }), req.body.password, function(err, user){
-		if(err)
-			return res.render('register', { info: err });
+app.get('/register', function(req, res){
+	res.render('auth/register', {errMsg: ""});
+});
 
-		passport.authenticate('local')(req, res, function(){
-			res.render('home', { user: req.user, title: "Home" });
+app.get('/status', function(req, res){
+	if(!req.isAuthenticated())
+		return res.status(200).json({
+			status: false
 		});
+	res.status(200).json({
+		status: true
 	});
 });
 
-router.get('/login', function(req, res){
-	res.render('login', { user: req.user, title: 'Login Page' });
+/* POST routes */
+app.post('/login', function(req, res, next){
+  	passport.authenticate('local', function(err, user, info){
+	    if(err || !user)
+	      	res.render('auth/login', {errMsg: info.message});
+	    req.login(user, function(err, user){
+	      	if(err)
+		        res.render('auth/login', {errMsg: "Could not login. Please try again."});
+
+	      	res.redirect('../home', {user: user});
+	    });
+  	})(req, res, next);
 });
 
-router.post('/login', passport.authenticate('local'), function(req, res){
-	res.render('home', { user: req.user, title: 'Home' });
+app.post('/register', function(req, res){
+  	User.register(new User({ email: req.body.email }), req.body.password, function(err, account){
+		if(err)
+  			return res.status(500).json({
+    			err: err
+  			});
+		passport.authenticate('local')(req, res, function(){
+ 			return res.status(200).json({
+    			status: 'Registration successful'
+  			});
+		});
+  	});
 });
 
-router.get('/logout', function(req, res){
-	req.logout();
-	res.redirect('/auth/login');
-});
-
-router.get('/reset', function(req, res){
-	res.render('reset', { authenticated: false });
-});
-
-module.exports = router;
+module.exports = app;

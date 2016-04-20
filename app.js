@@ -7,48 +7,48 @@ var bodyParser = require('body-parser');
 var passport = require('passport');
 var session = require('express-session');
 var mongoose = require('mongoose');
-var LocalStrategy = require('passport-local').Strategy;
+var localStrategy = require('passport-local').Strategy;
 
-// Passport Auth
-var User = require('./models/User');
-passport.use(User.createStrategy());
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
-mongoose.connect('mongodb://localhost/app');
+// Mongoose connection
+mongoose.connect('mongodb://localhost/users');
 
-// Routes
-var routes = require('./routes/index');
-var auth = require('./routes/auth');
+// Schema models
+var User = require('./models/user');
 
 var app = express();
 
-// view engine setup
+// View engine setup
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
+app.set('view engine', 'ejs'); // Set up EJS for templating
 
-// uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(logger('dev')); // Log every request to the console
+app.use(cookieParser()); // Read cookies (needed for auth)
+app.use(bodyParser.json()); // Get information from HTML forms
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '/public')));
+// Serve npm modules in form on /mod
+app.use('/mod', express.static(__dirname + '/node_modules/'));
+
+app.use(session({
+    secret: 'Alex',
+    resave: false,
+    saveUninitialized: false
+}));
 app.use(passport.initialize());
-app.use(passport.session({ secret: 'Alex secret' }));
-app.use(session({ secret: 'Alex secret', resave: false, saveUninitialized: true, cookie: { secure: true }}));
+app.use(passport.session()); // Persistent login sessions
 
-app.use('/', routes);
-app.use('/auth', auth);
+// Configure passport
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next){
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
+// Routes
+app.use('/', require('./routes/main'));
+app.use('/auth', require('./routes/auth'));
 
 // ERR handlers
-// development error handler, will print stacktrace
+// Development error handler, will print stacktrace
 if(app.get('env') === 'development')
     app.use(function(err, req, res, next){
         res.status(err.status || 500);
@@ -58,7 +58,7 @@ if(app.get('env') === 'development')
         });
     });
 
-// production error handler, no stacktraces leaked to user
+// Production error handler, no stacktraces leaked to user
 app.use(function(err, req, res, next){
     res.status(err.status || 500);
     res.render('error', {

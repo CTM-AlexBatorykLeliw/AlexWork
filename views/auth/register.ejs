@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<% include ../partials/header %>
+</head>
+<body ng-app="auth">
+	<div class="container">
+		<div class="col-sm-6 col-sm-offset-3">
+			<h1>
+				<span class="fa fa-sign-in"></span>
+				&nbsp;Register
+			</h1>
+			<% if(errMsg.length > 0){ %>
+				<div class="alert alert-danger">
+					<%= errMsg %>
+				</div>
+			<% } %>
+			<form action="register" method="post">
+				<div class="form-group">
+					<label>
+						Email
+					</label>
+					<input type="email" class="form-control" name="email" required>
+				</div>
+				<div class="form-group">
+					<label>
+						Password
+					</label>
+					<input type="password" class="form-control" name="password" required>
+				</div>
+				<button type="submit" class="btn btn-warning btn-lg" ng-disabled="disabled">
+					Register
+				</button>
+			</form>
+			<hr>
+			<p>
+				Already have an account?&nbsp;
+				<a href="login">
+					Login
+				</a>
+			</p>
+		</div>
+	</div>
+</body>
+</html>
