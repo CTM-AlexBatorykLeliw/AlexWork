@@ -4,8 +4,10 @@
 	<title>Home</title>
 </head>
 <body>
-<h1>Home</h1>
-<a href="logout">Logout</a>
-<% user %>
+	<h1>Home</h1>
+	<p>You are logged in with email: <%= user.email %></p>
+	<p><a href="verify">Verify my email</a></p>
+	<p><a href="profile">My Profile</a></p>
+	<p><a href="logout">Logout</a></p>
 </body>
 </html>

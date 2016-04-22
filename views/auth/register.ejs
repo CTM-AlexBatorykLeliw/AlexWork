@@ -2,6 +2,9 @@
 <html>
 <head>
 <% include ../partials/header %>
+<style>
+	.red {color: red;}
+</style>
 </head>
 <body ng-app="auth">
 	<div class="container">
@@ -15,20 +18,41 @@
 					<%= errMsg %>
 				</div>
 			<% } %>
-			<form action="register" method="post">
+			<form action="register" method="post" name="regForm">
 				<div class="form-group">
 					<label>
-						Email
+						First Name <span class="red">*</span>
+					</label>
+					<input type="text" class="form-control" name="first_name" required>
+				</div>
+				<div class="form-group">
+					<label>
+						Last Name <span class="red">*</span>
+					</label>
+					<input type="text" class="form-control" name="last_name" required>
+				</div>
+				<div class="form-group">
+					<label>
+						Email <span class="red">*</span>
 					</label>
 					<input type="email" class="form-control" name="email" required>
 				</div>
 				<div class="form-group">
 					<label>
-						Password
+						Password <span class="red">*</span>
 					</label>
-					<input type="password" class="form-control" name="password" required>
+					<input class="form-control" type="password" ng-model="login.password" name="password" required>
 				</div>
-				<input type="submit" class="btn btn-warning btn-lg" ng-disabled="disabled" value="Register">
+				<div class="form-group" ng-show="login.password.length > 0">
+					<label>
+						Confirm Password <span class="red">*</span>
+					</label>
+					<input class="form-control" type="password" ng-model="login.verify" pw="login.password" name="verify" required>
+					<span class="red" ng-show="regForm.verify.$error.pw">
+						Passwords don't match!
+					</span>
+				</div>
+				<input type="submit" class="btn btn-warning btn-lg" ng-disabled="regForm.$invalid" value="Register">
 			</form>
 			<hr>
 			<p>

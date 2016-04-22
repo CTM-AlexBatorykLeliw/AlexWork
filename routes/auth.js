@@ -4,115 +4,203 @@ var passport = require('passport');
 var User = require('../models/user');
 var LocalStrategy = require('passport-local').Strategy;
 var bCrypt = require('bcrypt-nodejs');
+var async = require('async');
+var crypto = require('crypto');
+var nodemailer = require('nodemailer');
+var smtpTransport = nodemailer.createTransport("smtps://ctmalexbatorykleliw%40gmail.com:ntR759Cf-@smtp.gmail.com");
 
 /* PASSPORT strategy */
-var isValidPassword = function(user, password){
-  return bCrypt.compareSync(password, user.password);
+var isValidPassword = function(user, password)
+{
+    return bCrypt.compareSync(password, user.password);
 }
 
-// passport/login.js
+var createHash = function(password)
+{
+    return bCrypt.hashSync(password, bCrypt.genSaltSync(10), null);
+}
+
 passport.use('login', new LocalStrategy({
-        // by default, local strategy uses username and password, we will override with email
-        usernameField : 'email',
-        passwordField : 'password',
-        passReqToCallback : true // allows us to pass back the entire request to the callback
-    },
-    function(req, email, password, done) { // callback with email and password from our form
+    passReqToCallback : true,
+    usernameField: 'email'
+},
+function(req, email, password, done){
 
-        // find a user whose email is the same as the forms email
-        // we are checking to see if the user trying to login already exists
-        User.findOne({ 'local.email' :  email }, function(err, user) {
-            // if there are any errors, return the error before anything else
-            if (err)
+    User.findOne({ 'email': email }, function(err, user){
+
+        if (err)
+            return done(err);
+        if (!user)
+            return done(null, false, req.flash('errMsg', 'User not found. Please try again.'));
+        if (!user.validPassword(password))
+            return done(null, false, req.flash('errMsg', 'Incorrect Username or Password.'));
+
+        return done(null, user);
+    });
+}
+));
+
+passport.use('register', new LocalStrategy({ 
+    passReqToCallback : true,
+    usernameField: 'email'
+},
+function(req, email, password, done){
+
+    process.nextTick(function(){
+
+        User.findOne({ 'email': email }, function(err, user){
+
+            if(err)
                 return done(err);
-
-            // if no user is found, return the errMsg
-            if (!user)
-                return done(null, false, req.flash('errMsg', 'No user found.')); // req.flash is the way to set flashdata using connect-flash
-
-            // if the user is found but the password is wrong
-            if (!user.validPassword(password))
-                return done(null, false, req.flash('errMsg', 'Oops! Wrong password.')); // create the errMsg and save it to session as flashdata
-
-            // all is well, return successful user
-            return done(null, user);
-        });
-
-    }));
-
-passport.use('register', new LocalStrategy({
-        // by default, local strategy uses username and password, we will override with email
-        usernameField : 'email',
-        passwordField : 'password',
-        passReqToCallback : true // allows us to pass back the entire request to the callback
-    },
-    function(req, email, password, done) {
-
-        // asynchronous
-        // User.findOne wont fire unless data is sent back
-        process.nextTick(function() {
-
-        // find a user whose email is the same as the forms email
-        // we are checking to see if the user trying to login already exists
-        User.findOne({ 'email' :  email }, function(err, user) {
-            // if there are any errors, return the error
-            if (err)
-                return done(err);
-
-            // check to see if theres already a user with that email
-            if (user) {
-                return done(null, false, req.flash('errMsg', 'That email is already taken.'));
-            } else {
-
-                // if there is no user with that email
-                // create the user
-                var newUser            = new User();
-
-                // set the user's local credentials
-                newUser.email    = email;
+            if(user)
+                return done(null, false, req.flash('errMsg', 'That email is taken. Please try again.'));
+            else
+            {
+                var newUser = new User();
+                newUser.email = email;
                 newUser.password = newUser.generateHash(password);
+                newUser.first_name = req.body.first_name;
+                newUser.last_name = req.body.last_name;
 
-                // save the user
-                newUser.save(function(err) {
-                    if (err)
+                newUser.save(function(err){
+                    if(err)
                         throw err;
+
                     return done(null, newUser);
                 });
             }
-
-        });    
-
         });
-
-    }));
-
-var createHash = function(password){
- return bCrypt.hashSync(password, bCrypt.genSaltSync(10), null);
+    });
 }
+));
 
+/* Reset password middleware */
+app.get('/forgot', function(req, res) {
+  res.render('auth/forgot', {
+    user: req.user,
+    errMsg: req.flash('errMsg'),
+    sucMsg: req.flash('sucMsg')
+  });
+});
 
-/* GET login page. */
-  app.get('/login', function(req, res) {
+app.post('/forgot', function(req, res, next) {
+  async.waterfall([
+    function(done) {
+      crypto.randomBytes(20, function(err, buf) {
+        var token = buf.toString('hex');
+        done(err, token);
+      });
+    },
+    function(token, done) {
+      User.findOne({ email: req.body.email }, function(err, user) {
+        if (!user) {
+          req.flash('errMsg', 'No account with that email address exists.');
+          return res.redirect('forgot');
+        }
+
+        user.reset_token = token;
+        user.reset_token_expires = Date.now() + 7200000; // 2 hours
+
+        user.save(function(err) {
+          done(err, token, user);
+        });
+      });
+    },
+    function(token, user, done) {
+
+      var mailOptions = {
+        to: user.email,
+        from: 'autoreply@alex.com',
+        subject: 'Password Reset',
+        text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+          'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+          'http://' + req.headers.host + '/auth/reset/' + token + '\n\n' +
+          'If you did not request this, please ignore this email and your password will remain unchanged.\n'
+      };
+      smtpTransport.sendMail(mailOptions, function(err) {
+        req.flash('info', 'An e-mail has been sent to ' + user.email + ' with further instructions.');
+        done(err, 'done');
+      });
+    }
+  ], function(err) {
+    if (err) return next(err);
+    req.flash('sucMsg', 'Message has been sent to reset password.');
+    res.redirect('forgot');
+  });
+});
+
+app.get('/reset/:token', function(req, res) {
+  User.findOne({ reset_token: req.params.token, reset_token_expires:{ $gt: Date.now() }}, function(err, user) {
+    if (!user) {
+      req.flash('errMsg', 'Password reset token is invalid or has expired. Please try again.');
+      return res.redirect('../forgot');
+    }
+    res.render('auth/reset', {
+      user: req.user,
+      errMsg: req.flash('errMsg')
+    });
+  });
+});
+
+app.post('/reset/:token', function(req, res) {
+  async.waterfall([
+    function(done) {
+      User.findOne({ reset_token: req.params.token }, function(err, user) {
+        if (!user) {
+          req.flash('errMsg', 'Password reset token is invalid or has expired. Please try again.');
+          return res.redirect('forgot');
+        }
+
+        user.password = req.body.password;
+        user.reset_token = undefined;
+        user.reset_token_expires = undefined;
+
+        user.save(function(err) {
+          req.logIn(user, function(err) {
+            done(err, user);
+          });
+        });
+      });
+    },
+    function(user, done) {
+
+      var mailOptions = {
+        to: user.email,
+        from: 'autoreply@alex.com',
+        subject: 'Password Reset Confirmation',
+        text: 'Hello,\n\n' +
+          'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
+      };
+      smtpTransport.sendMail(mailOptions, function(err) {
+        req.flash('sucMsg', 'Success! Your password has been changed.');
+        done(err);
+      });
+    }
+  ], function(err) {
+    res.redirect('login');
+  });
+});
+
+/* GET requests */
+app.get('/login', function(req, res){
     res.render('auth/login', { errMsg: req.flash('errMsg') });
-  });
- 
-  /* Handle Login POST */
-  app.post('/login', passport.authenticate('login', {
-    successRedirect: '../main/home',
-    failureRedirect: 'login',
-    failureFlash : true 
-  }));
- 
-  /* GET Registration Page */
-  app.get('/register', function(req, res){
+});
+
+app.get('/register', function(req, res){
     res.render('auth/register', { errMsg: req.flash('errMsg') });
-  });
- 
-  /* Handle Registration POST */
-  app.post('/register', passport.authenticate('register', {
-    successRedirect: '../main/home',
+});
+
+/* POST requests */
+app.post('/login', passport.authenticate('login', {
+    successRedirect: '../home',
+    failureRedirect: 'login',
+    failureFlash : true
+}));
+
+app.post('/register', passport.authenticate('register', {
+    successRedirect: '../home',
     failureRedirect: 'register',
-    failureFlash : true 
-  }));
+    failureFlash : true
+}));
 
 module.exports = app;
