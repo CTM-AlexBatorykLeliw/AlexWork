@@ -1,13 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Home</title>
+<title>My Home</title>
+<% include ../partials/main_header %>
+<script src="/javascripts/HomeCtrls.js"></script>
 </head>
-<body>
-	<h1>Home</h1>
-	<p>You are logged in with email: <%= user.email %></p>
-	<p><a href="verify">Verify my email</a></p>
-	<p><a href="profile">My Profile</a></p>
-	<p><a href="logout">Logout</a></p>
+<body ng-app="home">
+	<% include ../partials/main_navbar %>
+	<div class="container">
+		<div class="col-sm-6 col-sm-offset-3">
+			<h1>Home</h1>
+			<% if(!user.verified){ %>
+				<div class="alert alert-info alert-dismissible">
+					You can verify your email address to gain full access by clicking 
+					<a href="auth/verify/id/<%= user._id %>">
+						here
+					</a>
+					!
+				</div>
+			<% } if(errMsg.length > 0){ %>
+				<div class="alert alert-danger">
+					<%= errMsg %>
+				</div>	
+			<% } if(infoMsg.length > 0){ %>
+				<div class="alert alert-info">
+					<%= infoMsg %>
+				</div>
+			<% } if(sucMsg.length > 0){ %>
+				<div class="alert alert-success">
+					<%= sucMsg %>
+				</div>
+			<% } %>
+			<p>You are logged in with email: <%= user.email %></p>
+		</div>
+	</div>
 </body>
 </html>

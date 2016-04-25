@@ -24,15 +24,3 @@ app.directive('pw', function()
         }
     };
 });
-
-app.controller('registerCtrl', function($scope){
-
-});
-
-app.controller('loginCtrl', function($scope){
-
-});
-
-app.controller('homeCtrl', function($scope){
-
-});

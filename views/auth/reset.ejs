@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<% include ../partials/header2 %>
+<title>Reset password</title>
+<% include ../partials/auth_header %>
 </head>
 <body ng-app="auth">
 	<div class="container">
 		<div class="col-sm-6 col-sm-offset-3">
-			<h1>q`
+			<h1>
 				Reset Password
 			</h1>
 			<% if(errMsg.length > 0){ %>
@@ -14,16 +15,17 @@
 					<%= errMsg %>
 				</div>
 			<% } %>
-			<form action="reset" method="post" name="resForm">
+			<form action="../reset" method="post" name="resForm">
+				<input type="hidden" name="token" value="<%= user.reset_token %>">
 				<div class="form-group">
 					<label>
 						New Password
 					</label>
-					<input type="email" class="form-control" name="email" required>
+					<input class="form-control" type="password" ng-model="login.password" name="password" required autofocus>
 				</div>
 				<div class="form-group" ng-show="login.password.length > 0">
 					<label>
-						Confirm Password
+						Confirm New Password
 					</label>
 					<input class="form-control" type="password" ng-model="login.verify" pw="login.password" name="verify" required>
 					<span class="red" ng-show="regForm.verify.$error.pw">
@@ -34,7 +36,7 @@
 			<hr>
 			<p>
 				Return to login page?&nbsp;
-				<a href="login">
+				<a href="../login">
 					Login
 				</a>
 			</p>

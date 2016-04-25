@@ -10,15 +10,19 @@ var userSchema = new mongoose.Schema({
   	last_name: String,
   	created_at: Date,
   	updated_at: Date,
-  	reset_token: String,
-  	reset_token_expires: Date
+    reset_token: String,
+    reset_token_expires: Date,
+    verify_token: String,
+  	verify_token_expires: Date
 });
 
 userSchema.pre('save', function(next){
+
 	var now = new Date();
-
 	this.updated_at = now;
-
+    
+    if(!this.verified)
+        this.verified = false;
 	if(!this.created_at)
 		this.created_at = now;
 

@@ -11,7 +11,7 @@ var localStrategy = require('passport-local').Strategy;
 var flash = require('connect-flash');
 
 // Mongoose connection
-mongoose.connect('mongodb://localhost/users');
+mongoose.connect('mongodb://AlexBatorykLeliw:Kingducky2008@ds013931.mlab.com:13931/alex-work');
 
 // Schema models
 var User = require('./models/user');
@@ -28,8 +28,8 @@ app.use(cookieParser()); // Read cookies (needed for auth)
 app.use(bodyParser.json()); // Get information from HTML forms
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '/public')));
-// Serve npm modules in form on /mod
-app.use('/mod', express.static(__dirname + '/node_modules/'));
+// Serve npm modules
+app.use('/mod', express.static(__dirname + '/node_modules'));
 
 app.use(session({
     secret: 'Alex',
@@ -46,8 +46,9 @@ passport.deserializeUser(User.deserializeUser());
 app.use(flash());
 
 // Routes
-app.use('/', require('./routes/main'));
+app.use('/', require('./routes/home'));
 app.use('/auth', require('./routes/auth'));
+app.use('/profile', require('./routes/profile'));
 
 // ERR handlers
 // Development error handler, will print stacktrace

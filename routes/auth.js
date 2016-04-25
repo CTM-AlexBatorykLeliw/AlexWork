@@ -9,7 +9,7 @@ var crypto = require('crypto');
 var nodemailer = require('nodemailer');
 var smtpTransport = nodemailer.createTransport("smtps://ctmalexbatorykleliw%40gmail.com:ntR759Cf-@smtp.gmail.com");
 
-/* PASSPORT strategy */
+/* Authentication */
 var isValidPassword = function(user, password)
 {
     return bCrypt.compareSync(password, user.password);
@@ -74,116 +74,197 @@ function(req, email, password, done){
 }
 ));
 
-/* Reset password middleware */
-app.get('/forgot', function(req, res) {
-  res.render('auth/forgot', {
-    user: req.user,
-    errMsg: req.flash('errMsg'),
-    sucMsg: req.flash('sucMsg')
-  });
-});
-
-app.post('/forgot', function(req, res, next) {
-  async.waterfall([
-    function(done) {
-      crypto.randomBytes(20, function(err, buf) {
-        var token = buf.toString('hex');
-        done(err, token);
-      });
-    },
-    function(token, done) {
-      User.findOne({ email: req.body.email }, function(err, user) {
-        if (!user) {
-          req.flash('errMsg', 'No account with that email address exists.');
-          return res.redirect('forgot');
-        }
-
-        user.reset_token = token;
-        user.reset_token_expires = Date.now() + 7200000; // 2 hours
-
-        user.save(function(err) {
-          done(err, token, user);
-        });
-      });
-    },
-    function(token, user, done) {
-
-      var mailOptions = {
-        to: user.email,
-        from: 'autoreply@alex.com',
-        subject: 'Password Reset',
-        text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
-          'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-          'http://' + req.headers.host + '/auth/reset/' + token + '\n\n' +
-          'If you did not request this, please ignore this email and your password will remain unchanged.\n'
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        req.flash('info', 'An e-mail has been sent to ' + user.email + ' with further instructions.');
-        done(err, 'done');
-      });
-    }
-  ], function(err) {
-    if (err) return next(err);
-    req.flash('sucMsg', 'Message has been sent to reset password.');
-    res.redirect('forgot');
-  });
-});
-
-app.get('/reset/:token', function(req, res) {
-  User.findOne({ reset_token: req.params.token, reset_token_expires:{ $gt: Date.now() }}, function(err, user) {
-    if (!user) {
-      req.flash('errMsg', 'Password reset token is invalid or has expired. Please try again.');
-      return res.redirect('../forgot');
-    }
-    res.render('auth/reset', {
-      user: req.user,
-      errMsg: req.flash('errMsg')
+/* Reset password */
+app.get('/forgot', function(req, res){
+    res.render('auth/forgot', {
+        user: req.user,
+        errMsg: req.flash('errMsg'),
+        sucMsg: req.flash('sucMsg')
     });
-  });
 });
 
-app.post('/reset/:token', function(req, res) {
-  async.waterfall([
-    function(done) {
-      User.findOne({ reset_token: req.params.token }, function(err, user) {
-        if (!user) {
-          req.flash('errMsg', 'Password reset token is invalid or has expired. Please try again.');
-          return res.redirect('forgot');
-        }
-
-        user.password = req.body.password;
-        user.reset_token = undefined;
-        user.reset_token_expires = undefined;
-
-        user.save(function(err) {
-          req.logIn(user, function(err) {
-            done(err, user);
-          });
+app.post('/forgot', function(req, res, next){
+    async.waterfall([
+        function(done){
+            crypto.randomBytes(20, function(err, buf){
+            var token = buf.toString('hex');
+            done(err, token);
         });
-      });
     },
-    function(user, done) {
+    function(token, done){
+        User.findOne({ email: req.body.email }, function(err, user){
+            if(!user)
+            {
+                req.flash('errMsg', 'No account with that email address exists.');
+                return res.redirect('forgot');
+            }
 
-      var mailOptions = {
-        to: user.email,
-        from: 'autoreply@alex.com',
-        subject: 'Password Reset Confirmation',
-        text: 'Hello,\n\n' +
-          'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
-      };
-      smtpTransport.sendMail(mailOptions, function(err) {
-        req.flash('sucMsg', 'Success! Your password has been changed.');
-        done(err);
-      });
-    }
-  ], function(err) {
-    res.redirect('login');
-  });
+            user.reset_token = token;
+            user.reset_token_expires = Date.now() + 7200000; // 2 hours
+
+            user.save(function(err) {
+                done(err, token, user);
+            });
+        });
+    },
+    function(token, user, done){
+        var mailOptions = {
+            to: user.email,
+            from: 'autoreply@alex.com',
+            subject: 'AlexWork Password Reset',
+            text: 'Hello ' + user.first_name + ',\n\nYou are receiving this because you have requested the reset of the password for your account.\n\n' +
+            'Please click on the following link, or paste this into your browser to reset your password:\n\n' +
+            'http://' + req.headers.host + '/auth/reset/' + token + '\n\n' +
+            'If you did not request this, please ignore this email and your password will remain unchanged.\n\n Thanks,\nAlex'
+        };
+        smtpTransport.sendMail(mailOptions, function(err) {
+            done(err, 'done');
+        });
+    }], function(err){
+        if(err)
+            return next(err);
+
+        req.flash('sucMsg', 'Message has been sent to reset password.');
+        res.redirect('forgot');
+    });
+});
+
+app.get('/reset/:token', function(req, res){
+    User.findOne({ reset_token: req.params.token, reset_token_expires:{ $gt: Date.now() }}, function(err, user) {
+        if(!user)
+        {
+            req.flash('errMsg', 'Password reset token is invalid or has expired. Please try again.');
+            return res.redirect('../forgot');
+        }
+        res.render('auth/reset', {
+            user: user,
+            errMsg: req.flash('errMsg')
+        });
+    });
+});
+
+app.post('/reset', function(req, res){
+    async.waterfall([
+        function(done){
+            User.findOne({ reset_token: req.body.token, reset_token_expires: { $gt: Date.now() } }, function(err, user){
+                if(!user)
+                {
+                    req.flash('errMsg', 'Password reset token is invalid or has expired. Please try again.');
+                    return res.redirect('../forgot');
+                }
+
+                var a = new User();
+                user.password = a.generateHash(req.body.password);
+                user.reset_token = undefined;
+                user.reset_token_expires = undefined;
+
+                user.save(function(err){
+                    done(err, user);
+                });
+            });
+        },
+        function(user, done){
+            var mailOptions = {
+                to: user.email,
+                from: 'autoreply@alex.com',
+                subject: 'Password Reset Confirmation',
+                text: 'Hello ' + user.first_name + ',\n\n' +
+                'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n\nThanks,\nAlex'
+            };
+            smtpTransport.sendMail(mailOptions, function(err){
+                done(err);
+            });
+        }
+    ], function(err){
+            req.flash('sucMsg', 'Success! Your password has been changed.');
+            res.redirect('../home');
+        });
+});
+
+/* Verify email address */
+app.get('/verify/id/:id', function(req, res){
+    async.waterfall([
+        function(done){
+            crypto.randomBytes(20, function(err, buf){
+            var token = buf.toString('hex');
+            done(err, token);
+        });
+    },
+    function(token, done){
+        User.findOne({ _id: req.params.id }, function(err, user){
+            if(!user)
+            {
+                req.flash('errMsg', 'Could send email at this time. Please try again later.');
+                return res.redirect('../../../home');
+            }
+
+            user.verify_token = token;
+            user.verify_token_expires = Date.now() + 7200000; // 2 hours
+
+            user.save(function(err) {
+                done(err, token, user);
+            });
+        });
+    },
+    function(token, user, done){
+        var mailOptions = {
+            to: user.email,
+            from: 'autoreply@alex.com',
+            subject: 'AlexWork Email Verification',
+            text: 'Hello ' + user.first_name + ',\n\nYou are receiving this because you have requested to verify your email.\n\n' +
+            'Please click on the following link, or paste this into your browser to do so:\n\n' +
+            'http://' + req.headers.host + '/auth/verify/' + token + '\n\n' +
+            'Thanks,\nAlex'
+        };
+        smtpTransport.sendMail(mailOptions, function(err){
+            done(err, 'done');
+        });
+    }], function(err){
+        if(err)
+            return next(err);
+
+        req.flash('sucMsg', 'Confirmation email has been sent.');
+        res.redirect('../../../home');
+    });
+});
+
+app.get('/verify/:token', function(req, res){
+    async.waterfall([
+        function(done){
+            User.findOne({ verify_token: req.params.token, verify_token_expires: { $gt: Date.now() } }, function(err, user){
+                
+                if(!user)
+                {
+                    req.flash('errMsg', 'Could not verify at this time. Please try again later.');
+                    return res.redirect('../../home');
+                }
+
+                user.verified = true;
+                user.verify_token = undefined;
+                user.verify_token_expires = undefined;
+
+                user.save(function(err){
+                    req.login(user, function(err){
+                        done(err, user);
+                    });
+                });
+            });
+        }
+    ], function(err){
+        if(err)
+            return next(err);
+
+        req.flash('sucMsg', 'Email successfully verified!');
+        res.redirect('../../home');
+    });
 });
 
 /* GET requests */
 app.get('/login', function(req, res){
-    res.render('auth/login', { errMsg: req.flash('errMsg') });
+    res.render('auth/login', {
+        errMsg: req.flash('errMsg'),
+        sucMsg: req.flash('sucMsg')
+    });
 });
 
 app.get('/register', function(req, res){
@@ -192,10 +273,15 @@ app.get('/register', function(req, res){
 
 /* POST requests */
 app.post('/login', passport.authenticate('login', {
-    successRedirect: '../home',
     failureRedirect: 'login',
     failureFlash : true
-}));
+}), function(req, res){
+    if(req.body.remember)
+        req.session.cookie.maxAge = 2592000000; // 1 Month 
+    else
+        req.session.cookie.expires = false; // Expires at end of session
+    res.redirect('../home');
+});
 
 app.post('/register', passport.authenticate('register', {
     successRedirect: '../home',
