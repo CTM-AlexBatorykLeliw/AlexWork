@@ -1,0 +1,26 @@
+<p>To change your password, fill in the following details.</p>
+<form name="pwForm" action="profile/edit/pw" method="post">
+	<input type="hidden" name="id" value="<%= user._id %>">
+	<div class="form-group">
+		<label>
+			Old Password
+		</label>
+		<input class="form-control" type="password" name="old_password" ng-model="login.old_pass" required>
+	</div>
+	<div class="form-group">
+		<label>
+			Password
+		</label>
+		<input class="form-control" type="password" ng-model="login.password" name="new_password" required>
+	</div>
+	<div class="form-group" ng-show="login.password.length > 0">
+		<label>
+			Confirm Password
+		</label>
+		<input class="form-control" type="password" ng-model="login.verify" pw="login.password" name="verify" required>
+		<span class="red" ng-show="regForm.verify.$error.pw">
+			Passwords don't match!
+		</span>
+	</div>
+	<input type="submit" class="btn btn-warning btn-lg" ng-disabled="pwForm.$invalid" value="Submit">
+</form>

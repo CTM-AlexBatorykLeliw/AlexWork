@@ -8,11 +8,14 @@
   "dependencies": {
     "angular": "^1.5.3",
     "angular-route": "^1.5.3",
+    "async": "latest",
     "bcrypt-nodejs": "latest",
     "body-parser": "~1.0.0",
     "bootstrap": "^3.3.6",
     "connect-flash": "~0.1.1",
     "cookie-parser": "~1.0.0",
+    "crypto": "latest",
+    "debug": "^2.2.0",
     "ejs": "~0.8.5",
     "express": "~4.0.0",
     "express-session": "~1.0.0",
@@ -20,11 +23,11 @@
     "jquery": "^2.2.2",
     "mongoose": "latest",
     "morgan": "~1.0.0",
+    "nodemailer": "latest",
     "passport": "~0.1.17",
     "passport-local": "~0.1.6",
+    "passport-local-mongoose": "latest",
     "path": "latest",
-    "crypto": "latest",
-    "async": "latest",
-    "nodemailer": "latest"
+    "serve-favicon": "latest"
   }
 }

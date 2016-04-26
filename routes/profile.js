@@ -13,8 +13,14 @@ app.get('/', common.isLogged(), function(req, res){
 	});
 });
 
+app.get('/:partial', common.isLogged(), function(req, res){
+	res.render('main/profile/' + req.params.partial, {
+		user: req.user
+	});
+});
+
 /* DELETE requests */
-app.delete('/profile/delete/:id', function(req, res, next){
+app.delete('/delete/:id', function(req, res, next){
 	User.findById(req.params.id, function(err, user){
 		if(err)
 			return next(err);
@@ -29,24 +35,32 @@ app.delete('/profile/delete/:id', function(req, res, next){
 });
 
 /* PUT requests */
-app.put('/profile/edit/:id', function(req, res, next){
+app.put('/edit/:id', function(req, res, next){
 
 });
 
 /* POST requests */
-app.post('/profile/edit/pw/:id', function(req, res, next){
+app.post('/edit/pw/:id', function(req, res, next){
 	User.findById(req.params.id, function(err, user){
 		if(err)
 			return next(err);
 
-		if(validPassword(req.body.old_password))
+		if(user.validPassword(req.body.old_password))
 		{
 			user.password = user.generateHash(req.body.new_password);
 
+			user.save(function(err){
+				if(err)
+					return next(err);
+
+				req.flash('sucMsg', 'Your password was changed!');
+				return res.redirect('/');
+			});
 		}
 		else
 		{
-
+			req.flash('errMsg', 'Your old password was incorrect. Please try again.');
+			return res.redirect('#edit/pw');
 		}
 
 	});

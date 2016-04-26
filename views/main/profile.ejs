@@ -2,7 +2,9 @@
 <html>
 <head>
 <title>My Profile</title>
+<base href="/profile/">
 <% include ../partials/main_header %>
+<script src="/mod/angular-route/angular-route.min.js"></script>
 <script src="/javascripts/ProfileCtrls.js"></script>
 <style>
 	.profile-btns {
@@ -17,7 +19,6 @@
 	<% include ../partials/main_navbar %>
 	<div class="container">
 		<div class="col-sm-6 col-sm-offset-3">
-		<!-- First name, last name, email, password,  -->
 			<h1>
 				My Profile
 			</h1>
@@ -36,32 +37,22 @@
 			<% } %>
 			<div>
 				<div class="profile-btns">
-					<a class="btn btn-primary">
+					<a class="btn btn-default" href="basic_info">
+						<i class="fa fa-user"></i>&nbsp;
+						Basic Info
+					</a>
+					<a class="btn btn-primary" href="edit">
 						<i class="fa fa-cog"></i>&nbsp;
 						Edit My Details
 					</a>
-					<a class="btn btn-info">
+					<a class="btn btn-info" href="edit/pw">
 						<i class="fa fa-key"></i>&nbsp;
 						Change My Password
 					</a>
-					<a class="btn btn-danger">
+					<a class="btn btn-danger" href="delete">
 						<i class="fa fa-trash"></i>&nbsp;
 						Delete My Profile
 					</a>
-				</div>
-				<div class="profile-basic-info">
-					<p>
-						First Name:
-						<%= user.first_name %>
-					</p>
-					<p>
-						Last Name:
-						<%= user.last_name %>
-					</p>
-					<p>
-						Email:
-						<%= user.email %>
-					</p>
 				</div>
 			</div>
 		</div>
